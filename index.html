@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Deerkill Staffing 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: header + KPI strip, tab rail, then a 3D stage beside a notes column that stacks under it on phones */
+:root{
+  --bg:#F2F5F1; --surface:#FFFFFF; --stage:#E8EEE9; --floor:#DCE5DE; --plat:#C4D1C8;
+  --fg:#16241C; --muted:#5A6B61; --line:#D3DDD6; --label-bg:rgba(255,255,255,.86);
+  --accent:#1F6B4A; --lake:#2C6E9F;
+  --ok:#2E8A57; --warn:#C7832A; --crit:#C24A3C; --ghost:#B9C7BE;
+  --c1:#2C6E9F; --c2:#1F6B4A; --c3:#2F9A9A; --c4:#8A6BB0;
+  --season:#9FB3A7;
+  --f-display:"Bricolage Grotesque", "Public Sans", system-ui, sans-serif;
+  --f-body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1512; --surface:#16201B; --stage:#121B17; --floor:#1A2520; --plat:#2B3A33;
+  --fg:#E4ECE6; --muted:#93A59B; --line:#28362F; --label-bg:rgba(18,27,23,.85);
+  --accent:#4FB384; --lake:#62A4D6;
+  --ok:#4DB57B; --warn:#E3A44C; --crit:#E46D5D; --ghost:#3B4C44;
+  --c1:#62A4D6; --c2:#4FB384; --c3:#4CC1BF; --c4:#AE92D6; --season:#4E6359; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1512; --surface:#16201B; --stage:#121B17; --floor:#1A2520; --plat:#2B3A33;
+  --fg:#E4ECE6; --muted:#93A59B; --line:#28362F; --label-bg:rgba(18,27,23,.85);
+  --accent:#4FB384; --lake:#62A4D6;
+  --ok:#4DB57B; --warn:#E3A44C; --crit:#E46D5D; --ghost:#3B4C44;
+  --c1:#62A4D6; --c2:#4FB384; --c3:#4CC1BF; --c4:#AE92D6; --season:#4E6359; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(24px,3.4vw,34px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;margin:0 0 4px}
+.stamp{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{background:var(--surface);padding:12px 14px;min-width:0}
+.kpi b{display:block;font-family:var(--f-display);font-size:26px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi .up{color:var(--ok)}
+@media (max-width:860px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:440px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+nav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav a{font-weight:600;color:var(--muted);text-decoration:none;padding:9px 12px 10px;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:13px}
+nav a .src{font-weight:400;font-size:11px;opacity:.8;margin-left:4px}
+nav a[aria-current="page"]{color:var(--fg);border-color:var(--accent)}
+nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+@media (max-width:960px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;height:min(64vh,620px);min-height:380px;background:var(--stage);border:1px solid var(--line);border-radius:12px;overflow:hidden;touch-action:none}
+.stage canvas{display:block;width:100%;height:100%}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font-size:11px;line-height:1.25;padding:1px 5px;border-radius:4px;background:var(--label-bg);color:var(--fg);font-weight:500}
+.lbl.big{font-family:var(--f-display);font-size:13px;font-weight:700}
+.lbl.plain{background:none;color:var(--muted);font-weight:500;padding:0}
+.lbl.hot{color:var(--crit)}
+.lbl.num{font-family:var(--f-mono);font-size:11px}
+.legend{position:absolute;left:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:6px 12px;max-width:calc(100% - 20px);background:var(--label-bg);padding:6px 10px;border-radius:8px;font-size:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend i.wire{background:none!important;border:1.5px dashed var(--lake)}
+.hint{position:absolute;right:10px;top:8px;font-size:11px;color:var(--muted)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;box-shadow:0 6px 18px rgba(0,0,0,.15);max-width:240px;z-index:3}
+.tip strong{display:block;font-size:13px}
+.tip .m{color:var(--muted)}
+aside{display:grid;gap:12px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+.panel h2{font-family:var(--f-display);font-size:18px;margin:0;line-height:1.2;text-wrap:balance}
+.panel h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0}
+.panel p{margin:0}
+.callout{border-left:3px solid var(--warn);padding:2px 0 2px 10px}
+.callout.crit{border-color:var(--crit)}
+.callout.ok{border-color:var(--ok)}
+.bars{display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;font-size:12px}
+.bar .t{height:6px;grid-column:1/-1;background:var(--line);border-radius:3px;overflow:hidden}
+.bar .t > span{display:block;height:100%;background:var(--accent);border-radius:3px}
+.bar .t > span.low{background:var(--crit)}
+.bar .t > span.mid{background:var(--warn)}
+.bar em{font-style:normal;font-family:var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+ul.plain{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13px}
+ul.plain li{display:flex;justify-content:space-between;gap:10px}
+ul.plain li em{font-style:normal;font-family:var(--f-mono);color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--bg)}
+.chip.crit{border-color:var(--crit);color:var(--crit)}
+.foot{font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>html{color-scheme:light}body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Deerkill Day Camp · 70th summer</p>
+      <h1>Summer 2027 staffing, in three dimensions</h1>
+    </div>
+    <div class="stamp">Sheet snapshot · hired 11/11 1:16 PM · applicants 11/11 1:17 PM</div>
+  </header>
+
+  <section class="kpis" aria-label="Headline numbers">
+    <div class="kpi"><b>72</b><span>of 225 hired · 32%</span></div>
+    <div class="kpi"><b class="up">+10</b><span>vs 2026 at 11/15</span></div>
+    <div class="kpi"><b>153</b><span>still to hire</span></div>
+    <div class="kpi"><b>33</b><span>active applicants</span></div>
+    <div class="kpi"><b>18</b><span>waiting on references</span></div>
+    <div class="kpi"><b>32</b><span>contracts out</span></div>
+  </section>
+
+  <nav aria-label="Views">
+    <a href="#pace" data-v="pace">Hiring pace<span class="src">Dashboard</span></a>
+    <a href="#pipeline" data-v="pipeline">Pipeline<span class="src">Dashboard</span></a>
+    <a href="#followup" data-v="followup">Follow-up<span class="src">Recruiting</span></a>
+    <a href="#groups" data-v="groups">Groups &amp; admin<span class="src">GroupStaff/Admin</span></a>
+    <a href="#specialists" data-v="specialists">Specialists &amp; waterfront<span class="src">Specialists/Waterfront/Subs</span></a>
+  </nav>
+
+  <div class="main">
+    <div class="stage" id="stage">
+      <div id="labels"></div>
+      <div class="legend" id="legend"></div>
+      <div class="hint">Drag to orbit · scroll or pinch to zoom · hover for detail</div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+
+    <aside>
+      <section class="panel" data-panel="pace">
+        <h2>Ahead of every prior season</h2>
+        <p class="callout ok">72 hired by the 11/15 checkpoint is the highest in 13 seasons. Last year had 62; the next best were 65 in 2017 and 2019.</p>
+        <p>Each season is a ridge line, rising checkpoint by checkpoint toward the summit at 225. The hiker stands on 2027's ridge at today's 72.</p>
+        <p class="callout">To stay with last season, the next marks are 64 by 11/30 (already met) and 97 by 12/15, which means 25 more hires in about five weeks.</p>
+        <h3>Progress by area</h3>
+        <div class="bars" id="areaBars"></div>
+      </section>
+
+      <section class="panel" data-panel="pipeline" hidden>
+        <h2>The pipeline stalls at references</h2>
+        <p>Applicants walk a trail from Incomplete to the staff lodge. Each stop has its own marker: a broken ring, hourglass, magnifier, speech bubble, clipboard, interview chairs, life ring, letters and a gift. Figures are colored by the position type they applied for; anyone who listed more than one type appears once for each.</p>
+        <p class="callout crit">18 applicants sit in References Pending and nobody is at Offered. Only one of the 18 has any reference checked (Carly Gottlieb, 1 of 3).</p>
+        <ul class="plain">
+          <li>Incomplete <em>6</em></li><li>Pending <em>3</em></li><li>Reviewed <em>12</em></li>
+          <li>Contacted <em>0</em></li><li>Screening scheduled <em>0</em></li><li>Interview scheduled <em>3</em></li>
+          <li>Interviewed – backup <em>0</em></li><li>References pending <em>18</em></li><li>Offered <em>0</em></li>
+          <li><strong>Hired</strong> <em>75 incl. 3 subs</em></li>
+        </ul>
+      </section>
+
+      <section class="panel" data-panel="followup" hidden>
+        <h2>Who needs a call</h2>
+        <p>Every applicant on the follow-up list holds a flag. Flag height is days since the last logged contact, and the glass line sits at 14 days, the sheet's follow-up threshold.</p>
+        <p class="callout crit">32 of 38 are at 14 days or more. The References row flies the highest flags: most are 40–55 days without a logged contact.</p>
+        <h3>Log entries to check</h3>
+        <ul class="plain">
+          <li>K. Saber <em>3/12/2026 RR</em></li>
+          <li>Tehila Strulowitz <em>3/20/26 Todd</em></li>
+          <li>Luke Wojciechowicz <em>no apply date</em></li>
+        </ul>
+        <p class="foot">The first two show a last contact months before the application date, which inflates them to 236–244 days. Luke's application date reads as 12/30/1899, so his record is likely missing it.</p>
+      </section>
+
+      <section class="panel" data-panel="groups" hidden>
+        <h2>40 of 110 group seats filled</h2>
+        <p>Each campsite carries its group's animal, with a figure for every counselor seat (four where a 4th counselor is needed, three where the sheet says it isn't). Admin, kitchen and grounds staff gather at the staff lodge.</p>
+        <div class="bars" id="groupBars"></div>
+        <h3>No staff yet</h3>
+        <div class="chips"><span class="chip">Impalas</span><span class="chip">Sambars</span><span class="chip">Zebras</span><span class="chip">Subseniors</span><span class="chip">Subs</span><span class="chip">Senior Apex</span></div>
+        <p class="callout">16 running groups still need a Group Leader. Wildebeests has Josh Dank expected but not signed.</p>
+        <p class="foot">Nyalas is shown as not running in 2027. Buildings &amp; Grounds is 0 of 5.</p>
+      </section>
+
+      <section class="panel" data-panel="specialists" hidden>
+        <h2>Waterfront is the biggest gap</h2>
+        <p>Each station shows its activity, with a figure for every required slot; the first figure is the head. Waterfront staff stand around the pool, with the head's place on the lifeguard chair.</p>
+        <p class="callout crit">Waterfront has 3 of 25 staff and no Head or Assistant Head. That is 24 of the 153 open positions.</p>
+        <h3>Specialties with no head yet</h3>
+        <div class="chips" id="noHead"></div>
+        <h3>Substitutes</h3>
+        <ul class="plain">
+          <li>Michael DeSimone <em>weeks 2, 3, 7</em></li>
+          <li>Avery Milton <em>will let us know</em></li>
+          <li>Skylar Shaw <em>waiting on internship</em></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+  <p class="foot">Built from the Hired Staff &amp; Applicant Tracking sheet as of Wednesday 11/11/2026. Numbers are a snapshot; ask Claude to refresh after the next CampMinder paste.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+/* ---------- data (from the sheet) ---------- */
+const CHECKPOINTS=['10/15','10/31','11/15','11/30','12/15','12/31','1/15','1/31','2/15','2/28','3/15','3/31','4/15','4/30','5/15','5/31','6/15','6/28'];
+const SEASONS={
+2027:[0,56,72],
+2026:[1,1,62,64,97,101,120,130,145,164,172,180,186,192,203,208,217,229],
+2025:[0,0,45,53,62,73,94,105,124,142,148,164,181,191,207,216,221,228],
+2024:[0,36,46,53,61,68,96,107,116,125,144,147,164,178,191,199,211,217],
+2023:[0,0,41,50,58,75,95,104,112,120,140,151,157,164,183,195,209,208],
+2022:[0,0,1,1,51,56,80,94,102,107,124,139,148,158,167,175,190,199],
+2021:[0,0,61,68,90,102,118,121,139,153,159,164,168,172,178,184,190,193],
+2020:[23,32,37,65,83,93,102,114,121,126,131,140,149,153,157,154,162,181],
+2019:[0,48,65,72,79,88,102,112,124,129,131,142,157,161,171,178,192,194],
+2018:[0,48,59,66,66,74,92,106,125,131,140,145,150,158,164,171,176,188],
+2017:[0,57,65,83,101,114,129,139,150,154,158,161,166,168,173,175,185,193],
+2016:[0,0,49,54,64,69,84,113,126,129,143,151,160,162,171,177,184,194],
+2015:[0,36,52,62,66,78,96,108,116,126,135,151,156,164,171,177,191,195]};
+const AREAS=[['Specialty Head',10,24],['Specialty Assistant',4,26],['Waterfront',3,27],['Group Leader',14,31],['Senior Group Counselor',16,41],['Junior Group Counselor',8,32],['Group Flex',2,4],['Admin / Head Counselors / STARs',12,25],['Kitchen',3,10],['Buildings & Grounds',0,5]];
+const STAGES=['Incomplete','Pending','Reviewed','Contacted','Screening','Interview','Backup','References','Offered'];
+const TYPES=['Group','Specialty','Waterfront','Other'];
+const PIPE=[[4,1,1,0],[3,1,0,0],[4,6,0,3],[0,0,0,0],[0,0,0,0],[1,1,1,0],[0,0,0,0],[10,6,5,1],[0,0,0,0]];
+const FOLLOW={
+ 'Incomplete':[['Michael Connolly','R',47],['Katering Siguenza','N',23],['Jazmin Nava Rojas','N',5],['Melany Ochoa','N',5],['Briana Lutz','R',1],['Carmela Cinnante','R',0]],
+ 'Pending':[['Luke Wojciechowicz','N',40,'No application date on file'],['Sophia Lynch','R',1],['Steph Greenberg','N',0]],
+ 'Reviewed':[['K. Saber','N',244,'Last contact logged before application'],['Tehila Strulowitz','R',236,'Last contact logged before application'],['Kimberly Batti','N',54],['Colleen McCabe','R',46],['Diane Murray','R',41],['Shari Broadhead','R',33],['Steve Greenberg','R',28],['Keara Johnson','N',17]],
+ 'Interviewing':[['Abby Krentzman','N',56],['Emmy Zvirbulis','N',44],['John Griffin','N',23]],
+ 'References':[['Olivia Nieves','N',55],['Jackson Vacca','N',55],['Victor Wacksman','N',55],['Jackson Issadore','N',50],['Phenix Miller','N',50],['Ryan Pleeter','N',50],['Anya Stankiewicz','N',50],['Carly Gottlieb','N',48,'1 of 3 references checked'],['Javier Cera','N',47],['Ava Endlich','N',44],['Thomas Milisits','N',44],['Olivia Wallace','N',44],['Liad Amir','N',43],['Amit Dave','N',40],['Evan Lendaris','N',37],['Adam Saitta','N',35],['Sasha Link','N',30],['Juliana Esteban','N',23]]};
+// group seats: [name, status s=signed o=contract out e=expected, role, bus]
+const S=(n,s,r,b)=>({n,s,r,b});
+const JUNIOR=[
+ ['Flippers',4,[S('Melinda Zambrano','o','Group Leader','Drive Self'),S('Kristy Saber','s','Senior Group Counselor','Rockland Bus Buddy')]],
+ ['Dolphins',4,[S('Mojda Wahidi','s','Group Leader','Bergen Bus Buddy'),S('Siena Khym','s','Senior Group Counselor','Bergen Bus Captain')]]];
+const GIRLS=[
+ ['Bambis',4,[S('Dayana Garcia','s','Group Leader','Drive Self')]],
+ ['Does',4,[S('Hemali Tope','o','Group Leader','Drive Self'),S('Jayda Williams','s','Senior Group Counselor','Drive Self'),S('Lindsay Barnhart','o','Junior Group Counselor','Parent Drop Off')]],
+ ['Fawns',4,[S('Marybeth McDonough','o','Group Leader','Drive Self'),S('Sami Gotimer','o','Senior Group Counselor','Hoboken Weehawken Bus Captain'),S('Adelynn Looi','o','Junior Group Counselor','Not assigned')]],
+ ['Gazelles',4,[S('Ryan Plaisted','s','Group Leader','Drive Self'),S('Charlotte Lasaga','s','Senior Group Counselor','Hoboken Weehawken Bus Captain')]],
+ ['Harts',4,[S('Vivian Rugani','o','Group Leader','Drive Self')]],
+ ['Impalas',4,[]],
+ ['Llamas',3,[null,S('Madison Ferraioli','s','Senior Group Counselor','Bergen Bus Captain')]],
+ ['Nyalas',0,[],true],
+ ['Oribi',3,[null,S('Gabby Parness','s','Senior Group Counselor','Rockland Bus Captain'),S('Reilly Sati','s','Senior Group Counselor','Bergen Bus Captain')]],
+ ['Royals',3,[S('Cara Beirne','o','Group Leader','NYC Bus Captain'),S('Ananya Kannan','s','Senior Group Counselor','Bergen Bus Captain')]],
+ ['Sambars',3,[]],
+ ['Wapiti',3,[null,S('Emily Iannucci','o','Senior Group Counselor','Rockland Bus Captain'),S('Cecilia Reyes','o','Flex – Quest Camp Girls','Orange Bus Captain')]],
+ ['Zebras',3,[]],
+ ['Subseniors',3,[]],
+ ['Senior Summit',3,[S('Taylor Quattrocchi','s','Group Leader','Drive Self')]]];
+const BOYS=[
+ ['Antelopes',4,[null,S('Emily Getz','s','Senior Group Counselor','Rockland Bus Captain'),S('Aurelia Reasen','s','Senior Group Counselor','Rockland Bus Buddy')]],
+ ['Bison',4,[S('Odalys Pla','o','Group Leader','Montclair Bus Captain')]],
+ ['Bucks',4,[S('Charlotte Levenson','o','Group Leader','NYC Bus Captain')]],
+ ['Caribou',4,[null,S('Chris Clarke','s','Senior Group Counselor','Drive Self'),S('Carter Landrum','o','Senior Group Counselor','Rockland Bus Buddy'),S('Kellan Dougherty','o','Junior Group Counselor','Bergen Bus Captain')]],
+ ['Elks',4,[null,null,S('Logan Khym','s','Junior Group Counselor','Bergen Bus Buddy'),S('Azmir Mangi','o','Junior Group Counselor','Hoboken Weehawken Asst Captain')]],
+ ['Gnus',4,[null,S('Ben Hornstein','s','Senior Group Counselor','Montclair Bus Buddy')]],
+ ['Imperials',3,[S('Mike Litt','s','Group Leader','Drive Self')]],
+ ['Moose',3,[S('Marc Vogel','s','Group Leader','Bergen Bus Captain')]],
+ ['Okapi',3,[null,null,S('Rio Guzman','s','Junior Group Counselor','Rockland Bus Asst Captain')]],
+ ['Rams',3,[null,null,S('Grayson Hoffman','o','Junior Group Counselor','Rockland Bus Buddy')]],
+ ['Stags',3,[S('Chris Peterson','o','Group Leader','Drive Self'),S('Jake Plaisted','s','Senior Group Counselor','Rockland Bus Buddy'),S('Everett Andrew','o','Junior Group Counselor','Hoboken Weehawken Asst Captain')]],
+ ['Wildebeests',3,[S('Josh Dank','e','Group Leader','—')]],
+ ['Yaks',4,[null,null,S('Josh LeViseur','s','Flex – Quest Camp Boys','Drive Self')]],
+ ['Subs',3,[]],
+ ['Senior Apex',3,[]]];
+const P=(n,s)=>({n,s});
+const ADMIN=[
+ ['Attendance & Forms Administrator',1,[P('Dara Gottlieb','s')]],['Camp Administrator',1,[P('Pam McAndrew','s')]],
+ ['Head of Programming & Transportation',1,[P('Dennis Gordon','s')]],['Office Manager – Summer',1,[P('Traci Cohen','s')]],
+ ['Office Assistant – Summer',2,[P('Christine Barnhart','s')]],['Summer Transportation Coordinator',1,[P('Judy Bruno','o')]],
+ ['Camp Photographer',2,[P('Rachael Conway','s'),P('Eva Fazzari','o')]],['Camp Videographer',1,[P('Shannon Perez','o')]],
+ ['Nurse/EMT',5,[P('Christina Quinones','s'),P('Roshini George','o')]],['Laundry Attendant',1,[P('Evelyn Perez','s')]],
+ ['Food Operations Manager',1,[P('Gloria Miller','o')]],['Kitchen Head',1,[]],['Kitchen Assistant Head',1,[]],
+ ['Kitchen Staff',6,[P('Finley Conlon','s'),P('Charity Wilkerson','s')]],['Dietary Specialist',1,[]],
+ ['Head of Upper Girls',1,[P('Mallory Greenberg','e')]],['Head of Upper Boys',1,[]],['Head of Junior Camp',1,[]],
+ ['Head of Specialty Programming',1,[]],['Head of Summer Programming',1,[]],['Gatekeeper',1,[]],['Custodial',1,[]],
+ ['Buildings and Grounds Head',1,[]],['Buildings and Grounds Assistant Head',1,[]],['Buildings and Grounds Crew',3,[]]];
+// specialties: [area, [[role, required, people]]] – first role listed is the head
+const SPEC=[
+ ['Adventure Course',[['Head',1,[P('Colleen Tirtirian','o')]],['Assistant Head',1,[]],['Assistant',6,[P('Mason Nelson','o'),P('Jacob Parness','s')]]]],
+ ['Archery',[['Head',1,[P('Julius Rose','s')]],['Assistant',1,[]]]],
+ ['Arts & Crafts',[['Head',1,[]],['Assistant',2,[P('Lily Reyes','s')]]]],
+ ['Athletics',[['Head',4,[P('Kevin Flynn','s'),P('Connor Lynch','s'),P('Ryan Mogg','o')]]]],
+ ['Boating',[['Head',1,[]]]],
+ ['Ceramics',[['Head',2,[]],['Assistant Head',1,[]],['Assistant',1,[P('Emily Hubley','s')]]]],
+ ['Creative Arts Flex',[['Flex',1,[]]]],
+ ['Dance',[['Head',2,[P('Amy Wittrock','o')]]]],
+ ['Gymnastics',[['Head',1,[]],['Assistant',2,[]]]],
+ ['Movie Making',[['Head',1,[]],['Assistant',1,[]]]],
+ ['Music',[['Head',1,[]],['Assistant',1,[]]]],
+ ['Nature',[['Head',1,[P('Jada Johnson','s')]],['Assistant',1,[]]]],
+ ['Pedal Carts',[['Head',1,[]]]],
+ ['Photography',[['Head',1,[P('Mark Stankiewicz','o')]],['Assistant',1,[]]]],
+ ['Photo/Movie Flex',[['Flex',1,[]]]],
+ ['Pickleball',[['Head',1,[P('Mat Malden','s')]]]],
+ ['Taste Buds',[['Head',1,[]],['Assistant',1,[]]]],
+ ['Tennis',[['Head',1,[]],['Assistant',3,[]]]],
+ ['Theater Arts',[['Head',1,[P('Adriana Shaw','s')]]]],
+ ['Woodworking',[['Head',1,[]],['Assistant',2,[]]]],
+ ['Yoga',[['Head',1,[]]]]];
+const WATER=[['Waterfront Head',1,[]],['Waterfront Assistant Head',1,[]],['Waterfront Staff',25,[P('Jaden Shaw','s'),P('Anjeliss Espinoza','o'),P('Jordana Levi','o')]]];
+const SUBS=[['Michael DeSimone','s','Available weeks 2, 3, 7'],['Avery Milton','o','Will let us know'],['Skylar Shaw','o','Waiting to hear on nursing internship']];
+const STATUS={s:'Contract signed',o:'Contract sent, not signed',e:'Expected to sign'};
+
+/* ---------- side-panel HTML ---------- */
+const barHTML=(name,h,n)=>{const p=n?h/n:0;const cls=p<.2?'low':p<.4?'mid':'';return `<div class="bar"><span>${name}</span><em>${h} / ${n}</em><div class="t"><span class="${cls}" style="width:${Math.max(p*100,1.5)}%"></span></div></div>`};
+document.getElementById('areaBars').innerHTML=AREAS.map(a=>barHTML(...a)).join('');
+document.getElementById('groupBars').innerHTML=[['Group Leader',14,31],['STARs Group Leader',0,2],['Senior Group Counselor',16,41],['Junior Group Counselor',8,32],['Group Flex',2,4],['Admin, kitchen & grounds',15,38]].map(a=>barHTML(...a)).join('');
+document.getElementById('noHead').innerHTML=SPEC.filter(a=>a[1][0][0]==='Head'&&a[1][0][2].length===0).map(a=>`<span class="chip crit">${a[0]}</span>`).join('');
+
+const stage=document.getElementById('stage'), labelsEl=document.getElementById('labels'), tip=document.getElementById('tip'), legendEl=document.getElementById('legend');
+if(typeof THREE==='undefined'||!THREE.OrbitControls){stage.insertAdjacentHTML('beforeend','<p style="padding:24px">The 3D library did not load. Reload the page to try again.</p>');return;}
+
+/* ---------- three.js setup ---------- */
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const col=n=>new THREE.Color(css(n));
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(38,1,0.1,300);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.46; controls.minDistance=4; controls.maxDistance=80;
+let st=null, currentId=null;
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+
+/* ---------- primitives ---------- */
+const lam=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.82,metalness:0,flatShading:true},o));
+function mk(geo,mt,p,x=0,y=0,z=0){const o=new THREE.Mesh(geo,mt);o.position.set(x,y,z);if(p)p.add(o);return o;}
+const BOX=(w,h,d)=>new THREE.BoxGeometry(w,h,d);
+const CYL=(rt,rb,h,s=8,open=false)=>new THREE.CylinderGeometry(rt,rb,h,s,1,open);
+const SPH=(r,ws=10,hs=7)=>new THREE.SphereGeometry(r,ws,hs);
+const CONE=(r,h,s=8)=>new THREE.ConeGeometry(r,h,s);
+const TOR=(R,r,rs=6,ts=16,arc=Math.PI*2)=>new THREE.TorusGeometry(R,r,rs,ts,arc);
+function ell(p,mt,x,y,z,sx,sy,sz){const o=mk(SPH(.5),mt,p,x,y,z);o.scale.set(sx,sy,sz);return o;}
+function grp(p,x=0,y=0,z=0){const g=new THREE.Group();g.position.set(x,y,z);if(p)p.add(g);return g;}
+function tex(draw,w=128,h=64){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);return new THREE.CanvasTexture(c);}
+const stripes=(base,ink,n,vert=true)=>tex((g,w,h)=>{g.fillStyle=base;g.fillRect(0,0,w,h);g.fillStyle=ink;for(let i=0;i<n;i++){vert?g.fillRect(i*w/n,0,w/n*.45,h):g.fillRect(0,i*h/n,w,h/n*.45);}});
+const spots=(base,ink,n)=>tex((g,w,h)=>{g.fillStyle=base;g.fillRect(0,0,w,h);g.fillStyle=ink;let s=7;for(let i=0;i<n;i++){s=(s*9301+49297)%233280;const x=s/233280*w;s=(s*9301+49297)%233280;const y=h*.25+s/233280*h*.35;g.beginPath();g.arc(x,y,2.6,0,7);g.fill();}});
+const texMat=t=>lam(0xffffff,{map:t});
+function flagGeo(w,h){const s=new THREE.Shape();s.moveTo(0,0);s.lineTo(w,h/2);s.lineTo(0,h);s.lineTo(0,0);return new THREE.ShapeGeometry(s);}
+function flag(p,color,x,y,z,pole=1,fw=.36,fh=.24){const g=grp(p,x,y,z);mk(CYL(.018,.022,pole,5),lam(0xBFC6C2,{metalness:.4}),g,0,pole/2,0);const pv=grp(g,0,pole-fh,0);mk(flagGeo(fw,fh),lam(color,{side:THREE.DoubleSide}),pv);mk(SPH(.03,6,4),lam(0xD4A62A,{metalness:.5}),g,0,pole+.02,0);g.userData.pivot=pv;return g;}
+
+/* ---------- people ---------- */
+function person(state,scale=1){
+  const g=new THREE.Group();let m;
+  if(state==='e')m=new THREE.MeshBasicMaterial({color:col('--lake'),wireframe:true});
+  else if(state==='open')m=lam(col('--ghost'),{transparent:true,opacity:.42});
+  else if(state==='openLead')m=lam(col('--crit'),{transparent:true,opacity:.38});
+  else if(state==='s')m=lam(col('--ok'));else if(state==='o')m=lam(col('--warn'));
+  else m=lam(state);
+  mk(CYL(.075,.12,.3,8),m,g,0,.15,0);mk(SPH(.08,8,6),m,g,0,.39,0);
+  g.scale.setScalar(scale);return g;
+}
+
+/* ---------- animals ---------- */
+function horns(type,color,s=1){
+  const g=new THREE.Group(),m=lam(color);g.position.set(-.03,.08,0);
+  [1,-1].forEach(sd=>{
+    const pv=grp(g,0,0,sd*.055);
+    if(type==='antler'||type==='big'){
+      const len=(type==='big'?.5:.36)*s, n=type==='big'?4:3;
+      pv.rotation.set(sd*.5,0,.4);
+      mk(CYL(.016,.026,len,5),m,pv,0,len/2,0);
+      for(let i=1;i<=n;i++){const tl=.15*s*(1-i*.1),tg=grp(pv,0,len*i/(n+.5),0);tg.rotation.z=-.95;mk(CYL(.01,.018,tl,4),m,tg,0,tl/2,0);}
+    }else if(type==='palm'){
+      pv.rotation.set(sd*1.2,0,.1);mk(CYL(.024,.03,.14*s,5),m,pv,0,.07*s,0);
+      const pl=mk(BOX(.36*s,.035,.2*s),m,pv,.02,.17*s,0);pl.rotation.x=sd*.1;
+      for(let i=0;i<4;i++)mk(CONE(.025,.09*s,4),m,pv,-.14*s+i*.095*s,.22*s,sd*.06*s);
+    }else if(type==='straight'){pv.rotation.set(sd*.16,0,.6);mk(CONE(.024,.34*s,5),m,pv,0,.17*s,0);}
+    else if(type==='short'){pv.rotation.set(sd*.2,0,.4);mk(CONE(.022,.13*s,5),m,pv,0,.065*s,0);}
+    else if(type==='lyre'){pv.rotation.set(sd*.45,0,.35);mk(CYL(.014,.024,.2*s,5),m,pv,0,.1*s,0);const up=grp(pv,0,.2*s,0);up.rotation.set(-sd*.75,0,.25);mk(CONE(.014,.2*s,5),m,up,0,.1*s,0);}
+    else if(type==='curved'){pv.rotation.set(sd*1.45,0,0);mk(CYL(.028,.045,.15*s,5),m,pv,0,.075*s,0);const up=grp(pv,0,.15*s,0);up.rotation.x=-sd*1.5;mk(CONE(.028,.14*s,5),m,up,0,.07*s,0);}
+    else if(type==='spiral'){const t=mk(TOR(.1*s,.038*s,5,12,Math.PI*1.65),m,g,-.04,-.07,sd*.12);t.rotation.z=.9;}
+  });
+  return g;
+}
+function quad(o){
+  const g=new THREE.Group();
+  const body=o.map?texMat(o.map):lam(o.color), dark=lam(o.dark||o.color), headM=lam(o.headColor||o.color);
+  const L=o.leg??.46, bl=o.len??.9, bh=o.h??.4, bw=o.w??.34, by=L+bh*.4;
+  ell(g,body,0,by,0,bl,bh,bw);
+  if(o.belly)ell(g,lam(o.belly),0,by-bh*.18,0,bl*.78,bh*.5,bw*.86);
+  if(o.hump)ell(g,lam(o.hump),bl*.2,by+bh*.24,0,bl*.6,bh*.85,bw*1.02);
+  if(o.shag)ell(g,lam(o.shag),0,by-bh*.32,0,bl*.92,bh*.55,bw*1.05);
+  const legM=o.legMap?texMat(o.legMap):dark;
+  [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([a,b])=>{mk(CYL(.045,.032,L+.06,6),legM,g,a*bl*.3,(L+.06)/2,b*bw*.26);mk(CYL(.04,.04,.04,6),lam(0x2a2420),g,a*bl*.3,.02,b*bw*.26);});
+  const a=o.neckAng??.55, nl=o.neck??.4, nx=bl*.34, ny=by+bh*.15, nr=o.neckR??.07;
+  const neck=mk(CYL(nr,nr*1.45,nl,7),o.neckMap?texMat(o.neckMap):lam(o.neckColor||o.color),g,nx+Math.sin(a)*nl/2,ny+Math.cos(a)*nl/2,0);neck.rotation.z=-a;
+  const head=grp(g,nx+Math.sin(a)*nl+.05,ny+Math.cos(a)*nl,0), hs=o.headS??1;
+  ell(head,headM,.03,0,0,.3*hs,.16*hs,.15*hs);
+  ell(head,lam(o.muzzle||o.dark||o.color),.16*hs,-.03,0,.11*hs,.085*hs,.09*hs);
+  [1,-1].forEach(s=>{const e=mk(CONE(.034,o.earL??.12,5),headM,head,-.05,.08,s*.07);e.rotation.x=s*.75;});
+  [1,-1].forEach(s=>mk(SPH(.017,6,4),lam(0x141414),head,.09*hs,.035,s*.07*hs));
+  const t=mk(CYL(.018,.03,o.tail??.2,5),dark,g,-bl*.52,by+bh*.05,0);t.rotation.z=-.65;
+  if(o.beard)ell(head,lam(o.beard),.04,-.12,0,.12,.16,.08);
+  if(o.mane)mk(BOX(nl*.9,.05,.03),lam(o.mane),neck,0,0,0).position.set(-nr*1.1,0,0);
+  if(o.horns)head.add(horns(o.horns,o.hornColor||0xE6DCC6,o.hs??1));
+  if(o.extra)o.extra(g,head);
+  g.userData.head=head;
+  return g;
+}
+function dolphin(color){
+  const g=new THREE.Group(),m=lam(color),b=lam(0xDCE6EC);
+  ell(g,m,0,0,0,1,.3,.3);ell(g,b,.06,-.07,0,.78,.16,.24);
+  const beak=mk(CONE(.05,.22,6),m,g,.58,-.03,0);beak.rotation.z=-Math.PI/2;
+  const fin=mk(CONE(.09,.24,4),m,g,-.02,.2,0);fin.scale.z=.3;fin.rotation.z=.45;
+  const tc=mk(CONE(.09,.32,6),m,g,-.45,0,0);tc.rotation.z=Math.PI/2;
+  mk(BOX(.08,.03,.36),m,g,-.62,0,0);
+  [1,-1].forEach(s=>{const f=mk(BOX(.16,.02,.08),m,g,.12,-.1,s*.16);f.rotation.set(s*.4,s*.5,0);});
+  [1,-1].forEach(s=>mk(SPH(.02,6,4),lam(0x111111),g,.36,.04,s*.12));
+  return g;
+}
+function crown(scale=1){
+  const g=new THREE.Group(),gold=lam(0xD9AA2B,{metalness:.65,roughness:.3}),red=lam(0xA8233A),jw=lam(0x2A7BD4,{metalness:.3,roughness:.2});
+  mk(BOX(.72,.16,.72),red,g,0,.08,0);
+  mk(CYL(.27,.25,.22,10,true),lam(0xD9AA2B,{metalness:.65,roughness:.3,side:THREE.DoubleSide}),g,0,.27,0);
+  for(let i=0;i<8;i++){const an=i/8*Math.PI*2;mk(CONE(.05,.14,4),gold,g,Math.cos(an)*.26,.45,Math.sin(an)*.26);mk(SPH(.025,6,4),gold,g,Math.cos(an)*.26,.53,Math.sin(an)*.26);}
+  mk(SPH(.05,8,6),jw,g,0,.28,.26);mk(SPH(.04,8,6),lam(0xC0263A,{metalness:.3,roughness:.2}),g,.18,.28,.19);mk(SPH(.04,8,6),lam(0x2E9B5A,{metalness:.3,roughness:.2}),g,-.18,.28,.19);
+  g.scale.setScalar(scale);return g;
+}
+function mountain(flagColor){
+  const g=new THREE.Group();
+  mk(CONE(.75,1.35,6),lam(0x7A8A82),g,0,.675,0);mk(CONE(.31,.54,6),lam(0xF4F7F5),g,0,1.08,0);
+  mk(CONE(.48,.85,6),lam(0x8C9A92),g,.55,.425,.15);mk(CONE(.17,.28,6),lam(0xF4F7F5),g,.55,.72,.15);
+  mk(CONE(.4,.6,6),lam(0x6F7E77),g,-.5,.3,.25);
+  const f=flag(g,flagColor,0,1.3,0,.45,.3,.2);g.userData.pivot=f.userData.pivot;
+  return g;
+}
+function pennant(color){const g=new THREE.Group();const f=flag(g,color,0,0,0,1.5,.55,.36);g.userData.pivot=f.userData.pivot;mk(CYL(.2,.24,.08,10),lam(0x8A8F8B),g,0,.04,0);return g;}
+const BROWN=0x9A6A42,TAN=0xC79A62;
+function animalFor(name){
+  switch(name){
+  case 'Flippers':case 'Dolphins':{const g=new THREE.Group();const d=dolphin(name==='Flippers'?0x7FA6C2:0x5F8099);d.position.y=.75;d.scale.setScalar(.95);g.add(d);g.userData.swim=d;return g;}
+  case 'Bambis':return quad({map:spots('#B9784A','#F4E9DA',22),dark:0x7A4C2E,belly:0xEBDCC6,len:.72,h:.34,leg:.42,neck:.32,headS:1.05,earL:.16});
+  case 'Does':return quad({color:0xA8754E,dark:0x6D4A30,belly:0xE8D8C2,earL:.14});
+  case 'Fawns':return quad({map:spots('#C48553','#F6EDE0',24),dark:0x80522F,belly:0xEEDFCA,len:.66,h:.32,leg:.4,neck:.3,earL:.15});
+  case 'Gazelles':return quad({color:TAN,dark:0x7A5A36,belly:0xF2E8D8,len:.82,h:.34,leg:.52,neck:.36,horns:'straight',hornColor:0x2C2420,hs:.9});
+  case 'Harts':return quad({color:0x8A5233,dark:0x55321F,belly:0xC9A786,len:1,h:.44,leg:.5,horns:'big',hornColor:0xD8CCB0});
+  case 'Impalas':return quad({color:0xB9733F,dark:0x6F4424,belly:0xF2E6D6,len:.86,h:.36,leg:.5,horns:'lyre',hornColor:0x2C2420});
+  case 'Llamas':return quad({color:0xE6D8BE,dark:0xBFAF94,len:.8,h:.42,leg:.5,neck:.62,neckAng:.12,neckR:.075,earL:.18});
+  case 'Nyalas':return quad({map:stripes('#6E5B4C','#EFE6DA',9),dark:0x433529,horns:'lyre',hornColor:0xE3D6BC});
+  case 'Oribi':return quad({color:0xC78F55,dark:0x7E5531,belly:0xF2E6D6,len:.72,h:.32,leg:.46,neck:.32,horns:'short',hornColor:0x2C2420});
+  case 'Royals':return quad({color:0xA0623A,dark:0x5C3820,belly:0xEADBC6,len:.68,h:.32,leg:.38,neck:.28,earL:.1,extra:(g,h)=>{const c=crown(.26);c.position.set(-.02,.07,0);h.add(c);}});
+  case 'Sambars':return quad({color:0x5A4330,dark:0x3A2B20,len:1,h:.46,leg:.5,horns:'antler',hornColor:0xCDBE9F,hs:1.15});
+  case 'Wapiti':return quad({color:0xA97C55,dark:0x4D3424,neckColor:0x5A3D2A,headColor:0x5A3D2A,len:1.05,h:.46,leg:.52,horns:'big',hornColor:0xD8CCB0,hs:1.1});
+  case 'Zebras':return quad({map:stripes('#F5F3EE','#1E1E1E',14),neckMap:stripes('#F5F3EE','#1E1E1E',8,false),legMap:stripes('#F5F3EE','#1E1E1E',6,false),headColor:0xEDEBE6,dark:0x222222,mane:0x1E1E1E,len:.95,h:.44,leg:.5,neckAng:.45});
+  case 'Subseniors':return pennant(0xD06A4E);
+  case 'Senior Summit':return mountain(0xC64C6E);
+  case 'Antelopes':return quad({color:0xB07A47,dark:0x6A4628,belly:0xF0E4D2,len:.86,h:.36,leg:.5,horns:'straight',hornColor:0x2C2420});
+  case 'Bison':return quad({color:0x5B3E2A,hump:0x3E2A1E,shag:0x3A281C,dark:0x2A1D14,headColor:0x2E2018,beard:0x2A1D14,len:1,h:.48,leg:.38,neck:.18,neckAng:1.2,neckR:.12,headS:1.15,horns:'curved',hornColor:0x2A2420,hs:.8});
+  case 'Bucks':return quad({color:0x9C6A44,dark:0x5E3F27,belly:0xEDE0CC,horns:'antler',hornColor:0xD8CCB0});
+  case 'Caribou':return quad({color:0x8C7A64,dark:0x4E4134,neckColor:0xEDE6DA,len:1,h:.44,leg:.48,horns:'big',hornColor:0xE3D9C4,hs:1.05});
+  case 'Elks':return quad({color:0x9A6B45,dark:0x4D3424,neckColor:0x5E4030,headColor:0x6A4A35,len:1.05,h:.46,leg:.52,horns:'big',hornColor:0xD8CCB0});
+  case 'Gnus':return quad({color:0x6B655E,dark:0x3A3632,headColor:0x3E3A36,beard:0x1F1D1B,mane:0x1F1D1B,hump:0x5E5852,len:.95,h:.44,leg:.48,horns:'curved',hornColor:0x2A2622,hs:.85});
+  case 'Imperials':{const g=new THREE.Group();const c=crown(1.2);g.add(c);return g;}
+  case 'Moose':return quad({color:0x3F2D21,dark:0x231910,headColor:0x4A3527,len:1.05,h:.5,leg:.62,neck:.26,neckAng:.95,neckR:.1,headS:1.25,beard:0x2A1E15,horns:'palm',hornColor:0xC9B793,hs:1.2});
+  case 'Okapi':return quad({color:0x4A2E2A,dark:0x3A2420,legMap:stripes('#F2EEE8','#3A2420',6,false),headColor:0x8C7A68,len:.92,h:.42,leg:.52,neck:.42,neckAng:.4,earL:.16});
+  case 'Rams':return quad({color:0xE2D8C6,dark:0x6B5E50,headColor:0xCFC3AE,shag:0xD6CCB8,len:.88,h:.46,leg:.36,neck:.2,neckAng:.9,neckR:.1,horns:'spiral',hornColor:0xB8A27A});
+  case 'Stags':return quad({color:0x8A5233,dark:0x55321F,belly:0xC9A786,len:1.02,h:.44,leg:.52,horns:'big',hornColor:0xD8CCB0,hs:1.15});
+  case 'Wildebeests':return quad({color:0x5D6066,dark:0x2E2F33,headColor:0x34363A,beard:0x1C1D20,mane:0x1C1D20,hump:0x51545A,len:.95,h:.44,leg:.48,horns:'curved',hornColor:0x2A2622,hs:.9});
+  case 'Yaks':return quad({color:0x2E2A27,dark:0x1C1A18,shag:0x24211F,hump:0x26231F,headColor:0x2A2623,len:.95,h:.48,leg:.36,neck:.2,neckAng:1.1,neckR:.11,horns:'curved',hornColor:0xD8CCB0,hs:.95,tail:.3});
+  case 'Subs':return pennant(0x3C7FB8);
+  case 'Senior Apex':return mountain(0x2C6E9F);
+  }
+  return new THREE.Group();
+}
+
+/* ---------- scenery ---------- */
+function tree(h=1){const g=new THREE.Group();mk(CYL(.06,.08,.35*h,5),lam(0x6B4A33),g,0,.17*h,0);mk(CONE(.42*h,.7*h,7),lam(0x2F6B47),g,0,.62*h,0);mk(CONE(.31*h,.55*h,7),lam(0x3D8257),g,0,.98*h,0);return g;}
+function rock(s=1){const r=mk(new THREE.DodecahedronGeometry(.22*s,0),lam(0x8B928E));r.scale.y=.6;return r;}
+function forest(s,rx,rz,n,seed=3){let q=seed;const rnd=()=>(q=(q*16807)%2147483647)/2147483647;for(let i=0;i<n;i++){const a=rnd()*Math.PI*2,k=1+rnd()*.28,t=tree(.8+rnd()*.9);t.position.set(Math.cos(a)*rx*k,0,Math.sin(a)*rz*k);t.rotation.y=rnd()*6;s.scene.add(t);if(i%3===0){const r=rock(.8+rnd());r.position.set(Math.cos(a+.08)*rx*k*.96,.05,Math.sin(a+.08)*rz*k*.96);s.scene.add(r);}}}
+function cabin(){
+  const g=new THREE.Group(),w=2.4,d=1.6,h=1.05;
+  mk(BOX(w,h,d),lam(0x7A5235),g,0,h/2,0);
+  for(let i=0;i<5;i++)mk(BOX(w+.04,.035,d+.04),lam(0x5E3E27),g,0,.12+i*.21,0);
+  const sh=new THREE.Shape();sh.moveTo(-w/2-.2,0);sh.lineTo(w/2+.2,0);sh.lineTo(0,.8);sh.lineTo(-w/2-.2,0);
+  const rg=new THREE.ExtrudeGeometry(sh,{depth:d+.3,bevelEnabled:false});rg.translate(0,0,-(d+.3)/2);mk(rg,lam(0x3F4A44),g,0,h,0);
+  mk(BOX(.38,.62,.05),lam(0x4A2F1D),g,0,.31,d/2+.01);
+  [-.78,.78].forEach(x=>mk(BOX(.36,.3,.05),lam(0xFFE2A0,{emissive:0x8A6A20,emissiveIntensity:.6}),g,x,.58,d/2+.01));
+  mk(BOX(.22,.55,.22),lam(0x6E6A66),g,.7,h+.45,-.2);
+  mk(BOX(w+.4,.08,.55),lam(0x8A6240),g,0,.04,d/2+.3);
+  const f=flag(g,0x2F7A52,-w/2-.4,0,d/2+.3,2.1,.5,.32);g.userData.pivot=f.userData.pivot;
+  return g;
+}
+
+/* ---------- stage symbols ---------- */
+function stageSymbol(i){
+  const g=new THREE.Group(),wood=lam(0x9B6B43),white=lam(0xF2F2EE),metal=lam(0xB8C0BD,{metalness:.6,roughness:.35});
+  switch(i){
+  case 0:{const r=mk(TOR(.26,.07,8,24,Math.PI*1.45),lam(0x9AA6A0),g,0,.42,0);r.rotation.z=.5;[0,1,2].forEach(k=>{const d=mk(BOX(.07,.07,.07),lam(0x9AA6A0),g,.18+k*.05,.6+k*.06,0);d.rotation.z=k;});break;}
+  case 1:{mk(CYL(.26,.26,.05,10),wood,g,0,.03,0);mk(CYL(.26,.26,.05,10),wood,g,0,.83,0);const a=mk(CONE(.2,.38,10),lam(0xBFE3F0,{transparent:true,opacity:.55}),g,0,.62,0);a.rotation.x=Math.PI;mk(CONE(.2,.38,10),lam(0xBFE3F0,{transparent:true,opacity:.55}),g,0,.24,0);mk(CONE(.14,.16,10),lam(0xE3C27A),g,0,.13,0);[[-.22,0],[.22,0]].forEach(([x])=>mk(CYL(.02,.02,.8,5),wood,g,x,.43,0));break;}
+  case 2:{const r=mk(TOR(.2,.045,8,20),metal,g,-.05,.6,0);mk(CYL(.19,.19,.02,20),lam(0x9FD0EA,{transparent:true,opacity:.5}),g,-.05,.6,0).rotation.x=Math.PI/2;const h=mk(CYL(.04,.05,.38,6),lam(0x3A2B22),g,.17,.32,0);h.rotation.z=.75;r.rotation.y=0;break;}
+  case 3:{ell(g,white,0,.6,0,.62,.42,.2);const tl=mk(CONE(.09,.2,4),white,g,-.17,.36,0);tl.rotation.z=-2.6;[-.15,0,.15].forEach(x=>mk(SPH(.04,6,4),lam(0x2C6E9F),g,x,.6,.1));break;}
+  case 4:{mk(BOX(.42,.56,.04),wood,g,0,.42,0);mk(BOX(.34,.44,.045),white,g,0,.4,.005);mk(BOX(.16,.07,.07),metal,g,0,.7,.01);[0,1,2,3].forEach(k=>mk(BOX(.22,.02,.05),lam(0x7A8580),g,.02,.52-k*.09,.01));break;}
+  case 5:{[[-.22,1],[.22,-1]].forEach(([x,s])=>{const c=grp(g,x,0,0);c.rotation.y=s*Math.PI/2;mk(BOX(.24,.04,.24),lam(0x3F6E8F),c,0,.28,0);mk(BOX(.24,.28,.04),lam(0x3F6E8F),c,0,.44,-.1);[[-.1,-.1],[.1,-.1],[-.1,.1],[.1,.1]].forEach(([a,b])=>mk(CYL(.015,.015,.28,4),metal,c,a,.14,b));});mk(CYL(.13,.13,.03,12),wood,g,0,.36,0);mk(CYL(.025,.025,.34,5),wood,g,0,.17,0);break;}
+  case 6:{for(let k=0;k<4;k++){const t=mk(TOR(.26,.08,8,6,Math.PI/2),lam(k%2?0xF4F4F0:0xD8392F),g,0,.42,0);t.rotation.z=k*Math.PI/2;}break;}
+  case 7:{[0,1,2].forEach(k=>{const e=mk(BOX(.5,.04,.34),white,g,0,.06+k*.05,0);e.rotation.y=k*.25-.2;});const ck=grp(g,0,.4,0);mk(BOX(.08,.24,.06),lam(0x2E8A57),ck,-.06,0,0).rotation.z=.7;mk(BOX(.08,.42,.06),lam(0x2E8A57),ck,.1,.08,0).rotation.z=-.6;break;}
+  case 8:{mk(BOX(.44,.38,.44),lam(0x2C6E9F),g,0,.19,0);mk(BOX(.46,.39,.12),lam(0xD9AA2B),g,0,.195,0);mk(BOX(.12,.39,.46),lam(0xD9AA2B),g,0,.195,0);[1,-1].forEach(s=>{const b=mk(TOR(.08,.025,6,10),lam(0xD9AA2B),g,s*.07,.45,0);b.rotation.y=s*.6;});break;}
+  }
+  return g;
+}
+
+/* ---------- specialty icons ---------- */
+function specIcon(name){
+  const g=new THREE.Group(),wood=lam(0x9B6B43),white=lam(0xF2F2EE),dark=lam(0x2B2B2B),metal=lam(0xB8C0BD,{metalness:.6,roughness:.35});
+  switch(name){
+  case 'Adventure Course':{[-.42,.42].forEach(x=>mk(CYL(.05,.06,1.35,6),wood,g,x,.675,0));mk(BOX(.95,.05,.32),wood,g,0,.6,0);const r=mk(CYL(.014,.014,.84,4),lam(0xD9C38C),g,0,1.15,0);r.rotation.z=Math.PI/2;const r2=mk(CYL(.014,.014,.84,4),lam(0xD9C38C),g,0,.95,.0);r2.rotation.z=Math.PI/2;mk(BOX(.5,.9,.08),lam(0x6C7A86),g,0,.45,-.32);[[.1,.2,0xE24B4B],[-.12,.4,0x3DA35D],[.08,.6,0xF0B429],[-.1,.78,0x3A7BD5],[.14,.86,0xE24B4B]].forEach(([x,y,c])=>mk(SPH(.04,6,4),lam(c),g,x,y,-.27));break;}
+  case 'Archery':{const t=grp(g,0,.66,0);t.rotation.x=-.15;[[.38,0xF4F4F0],[.31,0x222222],[.24,0x2F6FBF],[.16,0xD7392F],[.08,0xF2C230]].forEach(([r,c],i)=>{mk(CYL(r,r,.06+i*.014,28),lam(c,{flatShading:false}),t).rotation.x=Math.PI/2;});[-.26,.26].forEach(x=>{const l=mk(CYL(.03,.03,1.05,5),wood,g,x,.48,-.14);l.rotation.x=.25;});const ar=grp(g,.06,.7,.18);ar.rotation.set(.08,.15,0);mk(CYL(.012,.012,.5,4),wood,ar,0,0,0).rotation.x=Math.PI/2;mk(CONE(.04,.08,3),lam(0xD7392F),ar,0,0,.27).rotation.x=Math.PI/2;break;}
+  case 'Arts & Crafts':{const ea=grp(g,0,0,-.1);[-.25,.25].forEach(x=>{const l=mk(CYL(.025,.025,1.1,5),wood,ea,x,.52,0);l.rotation.z=x>0?-.12:.12;});mk(BOX(.62,.5,.03),white,ea,0,.75,.03);mk(BOX(.5,.38,.035),lam(0x6FB3D9),ea,0,.75,.04);mk(SPH(.09,8,6),lam(0xF2C230),ea,.12,.85,.06);mk(BOX(.5,.12,.04),lam(0x3D8257),ea,0,.62,.06);const p=grp(g,.25,.3,.3);p.rotation.x=-1.1;mk(CYL(.22,.22,.03,14),lam(0xD9B98A),p);[[.08,.08,0xD7392F],[-.08,.1,0x2F6FBF],[.1,-.08,0xF2C230],[-.06,-.1,0x3DA35D]].forEach(([x,z,c])=>mk(SPH(.04,6,4),lam(c),p,x,.03,z));break;}
+  case 'Athletics':{[-.45,.45].forEach(x=>mk(CYL(.03,.03,.75,6),white,g,x,.375,-.2));mk(CYL(.03,.03,.93,6),white,g,0,.75,-.2).rotation.z=Math.PI/2;mk(BOX(.9,.7,.4),lam(0xFFFFFF,{transparent:true,opacity:.25,wireframe:true}),g,0,.37,-.4);const b=mk(new THREE.IcosahedronGeometry(.14,1),lam(0xF4F4F0),g,.1,.14,.3);b.userData.spin=1;mk(CONE(.08,.2,8),lam(0xF07D2A),g,-.35,.1,.35);break;}
+  case 'Boating':{mk(CYL(.6,.6,.04,24),lam(0x3D86B8,{transparent:true,opacity:.6}),g,0,.02,0);ell(g,lam(0xC2402E),0,.18,0,1.25,.24,.34);ell(g,lam(0x5A2B20),0,.24,0,1.05,.12,.25);const pd=grp(g,.1,.4,.18);pd.rotation.set(.3,0,.9);mk(CYL(.018,.018,.8,5),wood,pd);mk(BOX(.1,.22,.02),wood,pd,0,-.45,0);break;}
+  case 'Ceramics':{mk(CYL(.4,.42,.12,20),lam(0x8A8F8B),g,0,.06,0);const pts=[[0,0],[.17,0],[.25,.14],[.28,.3],[.2,.5],[.12,.6],[.16,.7]].map(([x,y])=>new THREE.Vector2(x,y));mk(new THREE.LatheGeometry(pts,16),lam(0xC0643A,{side:THREE.DoubleSide}),g,0,.12,0);break;}
+  case 'Creative Arts Flex':{const sh=new THREE.Shape();for(let i=0;i<10;i++){const r=i%2?.18:.42,a=i/10*Math.PI*2+Math.PI/2;i?sh.lineTo(Math.cos(a)*r,Math.sin(a)*r):sh.moveTo(Math.cos(a)*r,Math.sin(a)*r);}const sg=new THREE.ExtrudeGeometry(sh,{depth:.1,bevelEnabled:true,bevelSize:.02,bevelThickness:.02,bevelSegments:1});sg.translate(0,0,-.05);const s=mk(sg,lam(0xE7B634,{metalness:.4,roughness:.4}),g,0,.66,0);s.userData.spin=1;mk(CYL(.03,.05,.3,6),metal,g,0,.15,0);break;}
+  case 'Dance':{mk(CYL(.03,.03,1.1,5),metal,g,-.3,.55,0);mk(CYL(.02,.02,.32,5),metal,g,-.15,1.08,0).rotation.z=Math.PI/2;mk(CYL(.006,.006,.2,4),metal,g,0,.98,0);const b=mk(new THREE.IcosahedronGeometry(.24,2),lam(0xD9DEE2,{metalness:.95,roughness:.15}),g,0,.66,0);b.userData.spin=1;mk(CYL(.22,.24,.04,12),dark,g,-.3,.02,0);break;}
+  case 'Gymnastics':{mk(BOX(1.1,.04,.6),lam(0x3F6E8F),g,0,.02,.1);mk(BOX(1.1,.09,.1),lam(0xD9B98A),g,0,.6,0);[-.38,.38].forEach(x=>{mk(BOX(.06,.56,.06),metal,g,x,.29,0);mk(BOX(.06,.04,.3),metal,g,x,.02,0);});[-.12,.12].forEach(x=>{mk(CYL(.006,.006,.3,4),dark,g,x,1.05,-.3);mk(TOR(.06,.012,6,14),wood,g,x,.86,-.3);});mk(BOX(.4,.03,.03),metal,g,0,1.2,-.3);break;}
+  case 'Movie Making':{const c=grp(g,0,0,0);mk(BOX(.62,.44,.06),dark,c,0,.42,0);for(let i=0;i<4;i++)mk(BOX(.62,.03,.065),white,c,0,.28+i*.07,0).scale.x=.9;const top=grp(c,-.31,.66,0);top.rotation.z=.35;mk(BOX(.64,.1,.07),dark,top,.32,.05,0);for(let i=0;i<5;i++){const s=mk(BOX(.06,.1,.075),white,top,.06+i*.13,.05,0);s.rotation.z=.4;}break;}
+  case 'Music':{const m=lam(0x5B3E96);[[-.2,.18],[.2,.3]].forEach(([x,y])=>{const h=ell(g,m,x,y,0,.22,.15,.13);h.rotation.z=.35;mk(CYL(.022,.022,.6,5),m,g,x+.09,y+.3,0);});const bm=mk(BOX(.44,.07,.06),m,g,.09,.84,0);bm.rotation.z=.29;mk(BOX(.44,.07,.06),m,g,.09,.72,0).rotation.z=.29;break;}
+  case 'Nature':{const t=tree(1.05);t.position.set(-.15,0,-.1);g.add(t);mk(CYL(.03,.04,.14,6),white,g,.3,.07,.25);const cap=mk(new THREE.SphereGeometry(.11,8,5,0,Math.PI*2,0,Math.PI/2),lam(0xD13A2E),g,.3,.14,.25);[[.02,.08,.05],[-.05,.07,-.02]].forEach(([x,y,z])=>mk(SPH(.018,5,4),white,cap,x,y,z));const r=rock(1.1);r.position.set(.35,.05,-.15);g.add(r);break;}
+  case 'Pedal Carts':{mk(BOX(.72,.13,.38),lam(0x2E8B57),g,0,.22,0);mk(BOX(.22,.24,.3),lam(0x24724A),g,-.18,.38,0);const sw=mk(TOR(.08,.015,6,14),dark,g,.18,.42,0);sw.rotation.y=Math.PI/2;sw.rotation.x=.4;mk(CYL(.012,.012,.18,4),metal,g,.2,.33,0);[[.26,.2],[.26,-.2],[-.26,.2],[-.26,-.2]].forEach(([x,z])=>{mk(CYL(.12,.12,.07,14),dark,g,x,.12,z).rotation.x=Math.PI/2;mk(CYL(.05,.05,.075,8),metal,g,x,.12,z).rotation.x=Math.PI/2;});break;}
+  case 'Photography':case 'Photo/Movie Flex':{
+    if(name==='Photo/Movie Flex'){const r=grp(g,0,.5,0);mk(CYL(.36,.36,.06,22),metal,r).rotation.x=Math.PI/2;for(let i=0;i<5;i++){const a=i/5*Math.PI*2;mk(CYL(.07,.07,.07,10),dark,r,Math.cos(a)*.2,Math.sin(a)*.2,0).rotation.x=Math.PI/2;}mk(CYL(.05,.05,.08,10),dark,r).rotation.x=Math.PI/2;r.userData.spinZ=1;const strip=mk(BOX(.12,.5,.012),dark,g,.3,.2,.04);strip.rotation.z=-.4;mk(BOX(.06,.12,.12),metal,g,0,.08,0);break;}
+    [[0,.4],[2.1,.4],[4.2,.4]].forEach(([a])=>{const l=mk(CYL(.015,.015,.6,4),dark,g,Math.cos(a)*.13,.28,Math.sin(a)*.13);l.rotation.set(Math.sin(a)*.3,0,-Math.cos(a)*.3);});
+    mk(BOX(.5,.32,.22),dark,g,0,.72,0);mk(BOX(.16,.1,.14),dark,g,-.14,.92,0);mk(CYL(.11,.12,.18,14),lam(0x3A3A3A),g,0,.72,.18).rotation.x=Math.PI/2;mk(CYL(.08,.08,.02,14),lam(0x6FB3D9,{metalness:.5,roughness:.1}),g,0,.72,.28).rotation.x=Math.PI/2;mk(BOX(.08,.06,.04),lam(0xEFEFEF,{emissive:0x666666}),g,.17,.82,.11);break;}
+  case 'Pickleball':{[[-.15,.3,-.4],[.18,-.25,.3]].forEach(([x,rz,ry])=>{const p=grp(g,x,.45,0);p.rotation.set(0,ry,rz);mk(BOX(.3,.36,.035),lam(x<0?0x2C6E9F:0xD7392F),p,0,.12,0);mk(CYL(.03,.03,.22,6),dark,p,0,-.17,0);});mk(SPH(.075,10,7),lam(0xE8D33F),g,0,.85,.1).userData.bounce=1;mk(BOX(1,.02,.6),lam(0x4F8F6A),g,0,.01,0);break;}
+  case 'Taste Buds':{mk(CYL(.22,.2,.24,14),white,g,0,.36,0);[[.13,0],[-.13,0],[0,.13],[0,-.13],[.09,.09],[-.09,-.09]].forEach(([x,z])=>mk(SPH(.14,8,6),white,g,x,.56,z));mk(SPH(.16,8,6),white,g,0,.64,0);mk(CYL(.3,.3,.04,16),wood,g,0,.22,0);mk(CYL(.04,.04,.22,6),wood,g,0,.11,0);const sp=grp(g,.32,.3,.2);sp.rotation.z=.8;mk(CYL(.012,.012,.3,4),metal,sp);ell(sp,metal,0,.18,0,.08,.1,.03);break;}
+  case 'Tennis':{mk(BOX(1.05,.3,.015),lam(0xF4F4F0,{transparent:true,opacity:.55}),g,0,.25,0);mk(BOX(1.05,.03,.03),white,g,0,.41,0);[-.53,.53].forEach(x=>mk(CYL(.02,.02,.42,5),metal,g,x,.21,0));mk(BOX(1.2,.02,.8),lam(0x3B7FA8),g,0,.01,0);const b=mk(SPH(.08,10,7),lam(0xC8E03A),g,.2,.6,.25);b.userData.bounce=1;break;}
+  case 'Theater Arts':{mk(BOX(1.05,.16,.6),wood,g,0,.08,0);mk(BOX(1.05,.9,.05),lam(0x2B2430),g,0,.6,-.28);[-.4,.4].forEach(x=>{for(let k=0;k<3;k++)mk(CYL(.05,.05,.8,6),lam(0xA81E2E),g,x+(x<0?k*.07:-k*.07),.56,-.2);});mk(BOX(1.1,.14,.08),lam(0xA81E2E),g,0,1.02,-.22);mk(BOX(1.15,.04,.1),lam(0xD9AA2B),g,0,1.1,-.22);mk(CONE(.25,.6,10,),lam(0xFFF2B0,{transparent:true,opacity:.22}),g,0,.46,.05);break;}
+  case 'Woodworking':{[-.3,.3].forEach(x=>{[-.1,.1].forEach(z=>{const l=mk(BOX(.04,.45,.04),wood,g,x,.22,z);l.rotation.x=z>0?-.2:.2;});});mk(BOX(.85,.06,.26),lam(0xC99A66),g,0,.47,0);const h=grp(g,.05,.58,.04);h.rotation.set(0,.5,Math.PI/2);mk(CYL(.022,.025,.42,6),wood,h,0,0,0);mk(BOX(.16,.06,.06),metal,h,0,.22,0);mk(BOX(.05,.012,.3),lam(0xAAB2AF,{metalness:.6}),g,-.2,.51,.04);break;}
+  case 'Yoga':{mk(BOX(.8,.02,.36),lam(0x8A5BB8),g,.1,.01,0);mk(CYL(.07,.07,.36,14),lam(0x7A4BA8),g,-.33,.07,0).rotation.x=Math.PI/2;mk(SPH(.22,12,9),lam(0x2FA39A),g,.25,.24,-.05);mk(BOX(.06,.04,.08),lam(0x3D8257),g,.02,.03,.12);break;}
+  }
+  return g;
+}
+
+/* ---------- state helpers ---------- */
+function newState(w,d){
+  const scene=new THREE.Scene();const bg=col('--stage');scene.background=bg;scene.fog=new THREE.Fog(bg,45,95);
+  scene.add(new THREE.HemisphereLight(0xffffff,col('--floor'),.62));
+  const dl=new THREE.DirectionalLight(0xfff4e0,.85);dl.position.set(12,22,14);dl.castShadow=true;
+  dl.shadow.mapSize.set(2048,2048);Object.assign(dl.shadow.camera,{left:-30,right:30,top:30,bottom:-30,near:1,far:90});dl.shadow.bias=-.0006;scene.add(dl);
+  const g=mk(new THREE.CircleGeometry(Math.max(w,d)*.75,48),lam(col('--floor'),{roughness:1,flatShading:false}));g.rotation.x=-Math.PI/2;g.position.y=-.02;g.scale.set(w/Math.max(w,d),d/Math.max(w,d),1);g.receiveShadow=true;g.userData.floor=1;scene.add(g);
+  return {scene,labels:[],pick:[],grow:[],tick:[],t0:performance.now()};
+}
+function pickable(s,obj,tipHTML,growDelay){obj.userData.tip=tipHTML;s.pick.push(obj);if(growDelay!==undefined)pop(s,obj,growDelay);return obj;}
+function pop(s,obj,d,axis='all'){if(reduce)return;const base=obj.scale.clone();obj.userData.base=base;if(axis==='y')obj.scale.y=.001;else obj.scale.setScalar(.001);s.grow.push({obj,d,axis,base});}
+function label(s,text,x,y,z,cls=''){const el=document.createElement('div');el.className='lbl '+cls;el.textContent=text;s.labels.push({el,v:new THREE.Vector3(x,y,z)});return el;}
+function finish(s){s.scene.traverse(o=>{if(o.isMesh){const tr=o.material&&(o.material.transparent||o.material.wireframe);o.castShadow=!tr&&!o.userData.floor;o.receiveShadow=true;}});}
+const legend=items=>{legendEl.innerHTML=items.map(([c,t,w])=>`<span><i class="${w?'wire':''}" style="background:${c.startsWith('--')?css(c):c}"></i>${t}</span>`).join('');};
+const STATUS_LEGEND=()=>[['--ok','Signed'],['--warn','Contract out'],['--lake','Expected',1],['--ghost','Open'],['--crit','Open lead role']];
+const tipPerson=(p,role,extra='')=>`<strong>${p.n}</strong>${role}<br><span class="m">${STATUS[p.s]}${extra}</span>`;
+const wave=(s,pv,ph=0)=>{if(pv)s.tick.push(t=>pv.rotation.y=Math.sin(t*2.4+ph)*.35);};
+const pedestal=(r,h=.14)=>mk(CYL(r,r*1.06,h,24),lam(col('--plat'),{flatShading:false}));
+
+/* ---------- views ---------- */
+const VIEWS={
+pace(){
+  const s=newState(32,28),k=5/229,dx=.8,x0=-6.8;
+  const years=Object.keys(SEASONS).map(Number).sort((a,b)=>b-a);
+  years.forEach((y,yi)=>{
+    const z=5.6-yi*.85,data=SEASONS[y];
+    const sh=new THREE.Shape();sh.moveTo(x0,0);data.forEach((v,i)=>sh.lineTo(x0+i*dx,Math.max(v*k,.04)));sh.lineTo(x0+(data.length-1)*dx,0);sh.lineTo(x0,0);
+    const geo=new THREE.ExtrudeGeometry(sh,{depth:.34,bevelEnabled:true,bevelSize:.03,bevelThickness:.03,bevelSegments:1});geo.translate(0,0,-.17);
+    const isNow=y===2027,isLast=y===2026;
+    const c=isNow?col('--accent'):isLast?col('--lake'):col('--season');
+    const ridge=mk(geo,lam(c,isNow||isLast?{}:{transparent:true,opacity:Math.max(.35,.95-yi*.05)}),s.scene,0,0,z);
+    pop(s,ridge,yi*70,'y');
+    data.forEach((v,i)=>{const dot=mk(SPH(isNow||isLast?.08:.12,8,6),lam(isNow||isLast?0xffffff:c,isNow||isLast?{}:{transparent:true,opacity:0}),s.scene,x0+i*dx,v*k+.02,z+.19);dot.userData.tip=`<strong>${y} · ${CHECKPOINTS[i]}</strong>${v} hired${isNow&&i===2?'<br><span class="m">+10 vs 2026, best 11/15 on record</span>':''}`;s.pick.push(dot);});
+    label(s,String(y),x0-1,.3,z+.1,y>=2026?'big':'plain');
+  });
+  CHECKPOINTS.forEach((c,i)=>{if(i%2===0||i===3)label(s,c,x0+i*dx,0,6.7,'plain num');});
+  // hiker on the 2027 ridge
+  const hk=grp(s.scene,x0+2*dx,72*k,5.6);const hiker=person(col('--accent'),1.3);hk.add(hiker);mk(BOX(.16,.2,.1),lam(0x8A5A3A),hk,-.1,.28,0);const f=flag(hk,0xF2C230,.16,0,0,.95,.32,.2);wave(s,f.userData.pivot,0);
+  pickable(s,hk,'<strong>2027 · 72 hired</strong>Highest 11/15 count in 13 seasons',500);
+  s.tick.push(t=>hiker.position.y=Math.abs(Math.sin(t*3))*.05);
+  label(s,'72 by 11/15',x0+2*dx,72*k+1.55,5.6,'big');
+  // summit plane + flag at 225
+  const plane=mk(BOX(15,.02,12.8),lam(col('--lake'),{transparent:true,opacity:.09,depthWrite:false}),s.scene,0,225*k,.4);
+  const peak=grp(s.scene,x0+17*dx+1.2,0,-5.6);const pole=mountain(0xC2493B);pole.scale.set(2.2,225*k/1.75,2.2);peak.add(pole);wave(s,pole.userData.pivot,1);
+  pickable(s,peak,'<strong>Summit · 225 needed</strong>153 still to hire');
+  label(s,'Summit · 225 needed',x0+17*dx+1.2,225*k+1.2,-5.6,'big');
+  forest(s,17,15,40,11);
+  legend([['--accent','2027 so far'],['--lake','2026'],['--season','Earlier seasons'],['--lake','225 needed (glass plane)']]);
+  s.cam=[-13,10,17];s.target=[0,1.9,0];return s;
+},
+pipeline(){
+  const s=newState(34,28),cols=['--c1','--c2','--c3','--c4'];
+  const pts=[[-10.5,-4.5],[-7,-5.4],[-3.5,-4.6],[0,-5.4],[3.5,-4.4],[6.6,-2],[4.4,1],[1,1.8],[-2.4,1.2],[-5.8,2.6]];
+  const lodgeAt=new THREE.Vector3(-9.6,0,5.4);
+  const curve=new THREE.CatmullRomCurve3([...pts.map(([x,z])=>new THREE.Vector3(x,0,z)),lodgeAt]);
+  for(let i=0;i<=160;i++){const p=curve.getPoint(i/160);const st0=mk(CYL(.2,.22,.05,7),lam(col('--plat')),s.scene,p.x,.025,p.z);st0.rotation.y=i;st0.scale.set(1+((i*37)%5)*.06,1,1);}
+  const totals=[6,3,12,0,0,3,0,18,0];
+  STAGES.forEach((nm,i)=>{
+    const [x,z]=pts[i],empty=totals[i]===0;
+    const ped=pedestal(.46,.24);ped.position.set(x,.12,z);s.scene.add(ped);
+    const sym=stageSymbol(i);sym.position.set(x,.24,z);sym.scale.setScalar(empty?.85:1.05);s.scene.add(sym);
+    if(empty)sym.traverse(o=>{if(o.isMesh){o.material.transparent=true;o.material.opacity=.4;}});
+    pickable(s,sym,`<strong>${nm}</strong>${totals[i]} applicant${totals[i]===1?'':'s'}`,i*80);
+    s.tick.push(t=>sym.rotation.y=Math.sin(t*.8+i)*.35);
+    let j=0;
+    TYPES.forEach((t,ti)=>{for(let q=0;q<PIPE[i][ti];q++){const r=.82+.21*Math.sqrt(j),a=j*2.39996+i;const p=person(col(cols[ti]),1);p.position.set(x+Math.cos(a)*r,0,z+Math.sin(a)*r);p.rotation.y=-a;s.scene.add(p);pickable(s,p,`<strong>${nm}</strong>${t} applicant`,i*80+200+j*25);j++;}});
+    label(s,`${nm} · ${totals[i]}`,x,1.45,z,i===7?'big hot':empty?'plain':'big');
+  });
+  const lodge=cabin();lodge.position.copy(lodgeAt);lodge.position.x-=1.2;lodge.rotation.y=.5;s.scene.add(lodge);wave(s,lodge.userData.pivot,2);
+  pickable(s,lodge,'<strong>Hired</strong>75 staff incl. 3 subs');
+  for(let i=0;i<75;i++){const p=person(col('--ok'),.6),c=i%15,r=Math.floor(i/15);p.position.set(lodgeAt.x+.7+c*.27,0,lodgeAt.z+1.4+r*.3);s.scene.add(p);pop(s,p,1000+i*12);}
+  label(s,'Hired · 75',lodgeAt.x+1.5,2.4,lodgeAt.z+.8,'big');
+  forest(s,17,14,42,5);
+  legend(TYPES.map((t,j)=>[cols[j],`${t} applicant`]).concat([['--ok','Hired']]));
+  s.cam=[-3,18,20];s.target=[-2,0,.6];return s;
+},
+followup(){
+  const s=newState(26,20),k=.065,cap=70,dx=.7,order=[['Incomplete',0],['Pending',1],['Reviewed',2],['Interviewing',5],['References',7]];
+  order.forEach(([stg,si],ri)=>{
+    const z=-4.6+ri*2.3,rows=FOLLOW[stg].slice().sort((a,b)=>b[2]-a[2]),x0=-6;
+    const strip=mk(BOX(rows.length*dx+.5,.05,1),lam(col('--plat')),s.scene,x0+(rows.length-1)*dx/2,.025,z);
+    const ped=pedestal(.42,.2);ped.position.set(x0-1.6,.1,z);s.scene.add(ped);
+    const sym=stageSymbol(si);sym.position.set(x0-1.6,.2,z);s.scene.add(sym);
+    pickable(s,sym,`<strong>${stg}</strong>${rows.length} on the follow-up list`);
+    label(s,`${stg} · ${rows.length}`,x0-1.6,1.35,z,stg==='References'?'big hot':'big');
+    rows.forEach((r,i)=>{
+      const d=r[2],c=d<14?'--ok':d<30?'--warn':'--crit',H=.45+Math.min(d,cap)*k,x=x0+i*dx;
+      const g=grp(s.scene,x,.05,z);
+      const pp=person(r[1]==='R'?col('--lake'):col('--muted'),.75);pp.position.set(-.14,0,.18);g.add(pp);
+      const f=flag(g,col(c),.05,0,0,H,.34,.22);wave(s,f.userData.pivot,i*.6+ri);
+      if(d>cap){const q=mk(new THREE.OctahedronGeometry(.13,0),new THREE.MeshBasicMaterial({color:col('--crit'),wireframe:true}),g,.05,H+.2,0);s.tick.push(t=>q.rotation.y=t*1.5);label(s,`${r[0]} · ${d} d?`,x,H+.55,z,'hot');}
+      pickable(s,g,`<strong>${r[0]}</strong>${stg} · ${r[1]==='R'?'returning':'new'}<br>${d} days since contact${r[3]?`<br><span class="m">${r[3]}</span>`:''}`,ri*90+i*18);
+    });
+  });
+  mk(BOX(15.5,.02,11.4),lam(col('--lake'),{transparent:true,opacity:.13,depthWrite:false}),s.scene,-.4,.45+14*k,0);
+  label(s,'14-day follow-up line',6.8,.45+14*k+.1,5.2,'plain');
+  forest(s,14,11,30,8);
+  legend([['--ok','Under 14 days'],['--warn','14–29 days'],['--crit','30+ days'],['--lake','Returning'],['--muted','New applicant']]);
+  s.cam=[-9,8,12.5];s.target=[0,1,0];return s;
+},
+groups(){
+  const s=newState(46,26);
+  function campsite(g0,x,z){
+    const [name,n,seats,off]=g0;
+    const ped=pedestal(1.25,.14);ped.position.set(x,.07,z);s.scene.add(ped);
+    if(off){ped.material.transparent=true;ped.material.opacity=.4;}
+    const isJunior=name==='Flippers'||name==='Dolphins';
+    if(isJunior){mk(CYL(.95,.95,.03,24),lam(0x3D86B8,{transparent:true,opacity:.6}),s.scene,x,.16,z-.25);}
+    const an=animalFor(name);an.position.set(x,.14,z-.35);an.rotation.y=-.55;an.scale.setScalar(isJunior?1:1.35);s.scene.add(an);
+    if(off)an.traverse(o=>{if(o.isMesh){o.material.transparent=true;o.material.opacity=.28;}});
+    const filled=seats.filter(Boolean).length;
+    pickable(s,an,`<strong>${name}</strong>${off?'Not running in 2027':`${filled} of ${n} counselor seats filled`}`,Math.random()*400);
+    const ph=x*.7+z;
+    if(an.userData.swim){const d=an.userData.swim;s.tick.push(t=>{const q=(t*.9+ph)%(Math.PI*2);d.position.y=.55+Math.sin(q)*.35;d.rotation.z=Math.cos(q)*.5;});}
+    else if(an.userData.head){const h=an.userData.head;s.tick.push(t=>{h.rotation.z=Math.sin(t*1.3+ph)*.1;h.rotation.y=Math.sin(t*.7+ph)*.15;});}
+    else if(an.userData.pivot)wave(s,an.userData.pivot,ph);
+    else s.tick.push(t=>an.rotation.y=-.55+Math.sin(t*.6+ph)*.25);
+    for(let i=0;i<n;i++){
+      const a=(n===1?0:(i/(n-1)-.5))*1.9,px=x+Math.sin(a)*.82,pz=z+.35+Math.cos(a)*.45,p0=seats[i];
+      const pr=person(p0?p0.s:(i===0?'openLead':'open'),.9);pr.position.set(px,.14,pz);s.scene.add(pr);
+      pickable(s,pr,p0?tipPerson(p0,`${p0.r} · ${name}`,`<br>${p0.b}`):`<strong>Open seat</strong>${name} · ${i===0?'Group Leader':'Counselor'}`,p0?300+Math.random()*500:undefined);
+    }
+    label(s,off?`${name} · not running`:`${name} ${filled}/${n}`,x,0,z+1.45,off?'plain':(filled===0?'hot':''));
+  }
+  const lay=(arr,x0)=>arr.forEach((g0,i)=>campsite(g0,x0+(i%5)*3,-1.6+Math.floor(i/5)*3.1));
+  lay(GIRLS,-19.2);lay(BOYS,7.2);
+  JUNIOR.forEach((g0,i)=>campsite(g0,-1.5+i*3,-1.6));
+  label(s,'Girls · 18 staff',-13.2,2.2,-3.2,'big');label(s,'Boys · 18 staff + 1 expected',13.2,2.2,-3.2,'big');label(s,'Junior · 4 staff',0,2.2,-3.2,'big');
+  // staff lodge
+  const lodge=cabin();lodge.position.set(0,0,-7.6);lodge.scale.setScalar(1.35);s.scene.add(lodge);wave(s,lodge.userData.pivot,0);
+  pickable(s,lodge,'<strong>Staff lodge</strong>Admin, kitchen &amp; grounds · 15 of 38');
+  let idx=0;
+  ADMIN.forEach(([role,req,people])=>{for(let j=0;j<req;j++){const p0=people[j],c=idx%13,r=Math.floor(idx/13);
+    const pr=person(p0?p0.s:(j===0&&/Head|Manager/.test(role)?'openLead':'open'),.8);pr.position.set(-3+c*.5,0,-5.4+r*.45);s.scene.add(pr);
+    pickable(s,pr,p0?tipPerson(p0,role):`<strong>Open</strong>${role}`,p0?600+idx*20:undefined);idx++;}});
+  label(s,'Staff lodge · admin, kitchen & grounds 15/38',0,3.6,-7.6,'big');
+  // lake + trees for atmosphere
+  mk(new THREE.CircleGeometry(3.2,32),lam(0x3D86B8,{transparent:true,opacity:.55,flatShading:false}),s.scene,-15,.01,-8.4).rotation.x=-Math.PI/2;
+  forest(s,26,13.5,60,2);
+  legend(STATUS_LEGEND());
+  s.cam=[0,24,31];s.target=[0,0,-1];return s;
+},
+specialists(){
+  const s=newState(40,26);
+  SPEC.forEach(([area,roles],i)=>{
+    const x=-17.2+(i%7)*3.05,z=-4+Math.floor(i/7)*3.25;
+    const ped=pedestal(1.15,.14);ped.position.set(x,.07,z);s.scene.add(ped);
+    const ic=specIcon(area);ic.position.set(x,.14,z-.35);ic.scale.setScalar(1.25);s.scene.add(ic);
+    const slots=[];roles.forEach(([role,n,people],ri)=>{for(let q=0;q<n;q++)slots.push({role,p:people[q],head:ri===0&&role==='Head'});});
+    const filled=slots.filter(t=>t.p).length;
+    const who=slots.filter(t=>t.p).map(t=>`${t.p.n} (${t.role})`).join('<br>')||'No one hired yet';
+    pickable(s,ic,`<strong>${area} · ${filled} of ${slots.length}</strong><span class="m">${who}</span>`,i*40);
+    ic.traverse(o=>{if(o.userData.spin)s.tick.push(t=>o.rotation.y=t*1.2);if(o.userData.spinZ)s.tick.push(t=>o.rotation.z=t*.8);if(o.userData.bounce){const y0=o.position.y;s.tick.push(t=>o.position.y=y0-.3+Math.abs(Math.sin(t*2.6+i))*.4);}});
+    const n=slots.length;
+    slots.forEach((t,q)=>{const a=(n===1?0:(q/(n-1)-.5))*Math.min(2.4,.55*n),px=x+Math.sin(a)*.82,pz=z+.3+Math.cos(a)*.5;
+      const pr=person(t.p?t.p.s:(t.head?'openLead':'open'),.75);pr.position.set(px,.14,pz);s.scene.add(pr);
+      pickable(s,pr,t.p?tipPerson(t.p,`${area} ${t.role}`):`<strong>Open</strong>${area} ${t.role}`,t.p?400+i*40:undefined);});
+    label(s,`${area} ${filled}/${n}`,x,0,z+1.32,filled===0?'hot':'');
+  });
+  label(s,'Specialties · 14 of 50',-8,2.6,-5.6,'big');
+  // waterfront pool
+  const px=9.4,pz=-.8,W=7.2,D=5.2;
+  mk(BOX(W+.9,.25,D+.9),lam(0xCFD6D3),s.scene,px,.125,pz);
+  const water=mk(BOX(W,.06,D),lam(0x2F86C4,{transparent:true,opacity:.72,roughness:.2,metalness:.1,flatShading:false}),s.scene,px,.24,pz);
+  s.tick.push(t=>water.material.opacity=.66+Math.sin(t*1.5)*.06);
+  for(let l=1;l<4;l++){const lz=pz-D/2+l*D/4;for(let b=0;b<24;b++)mk(SPH(.045,6,4),lam(b%4<2?0xD8392F:0xF4F4F0),s.scene,px-W/2+.15+b*(W-.3)/23,.29,lz);}
+  const chair=grp(s.scene,px-W/2-.15,0,pz-D/2-.15);[[-.2,-.2],[.2,-.2],[-.2,.2],[.2,.2]].forEach(([a,b])=>mk(CYL(.03,.03,1.3,5),lam(0xF4F4F0),chair,a,.9,b));mk(BOX(.5,.06,.5),lam(0xD8392F),chair,0,1.55,0);mk(BOX(.5,.4,.05),lam(0xD8392F),chair,0,1.78,-.22);
+  const ring=mk(TOR(.22,.07,8,16),lam(0xD8392F),s.scene,px+W/2+.25,.3,pz+D/2+.1);ring.rotation.x=-Math.PI/2;
+  const [head,asst,staff]=WATER;
+  const hp=person(head[2][0]?head[2][0].s:'openLead',1);hp.position.set(0,1.58,0);chair.add(hp);pickable(s,hp,'<strong>Open</strong>Waterfront Head');
+  const ap=person(asst[2][0]?asst[2][0].s:'openLead',.85);ap.position.set(px-W/2+.5,.25,pz-D/2-.3);s.scene.add(ap);pickable(s,ap,'<strong>Open</strong>Waterfront Assistant Head');
+  for(let q=0;q<25;q++){const p0=staff[2][q],front=q<13,c=front?q:q-13,x=px-W/2+.5+c*(front?.52:.56),z=front?pz+D/2+.3:pz-D/2-.3;
+    const pr=person(p0?p0.s:'open',.85);pr.position.set(x,.25,z);if(!front)pr.position.x+=.5;s.scene.add(pr);
+    pickable(s,pr,p0?tipPerson(p0,'Waterfront Staff'):'<strong>Open</strong>Waterfront Staff',p0?700+q*80:undefined);}
+  label(s,'Waterfront · 3 of 27',px,2.4,pz-D/2-.4,'big hot');
+  // subs bench
+  const bz=4.7;const bench=grp(s.scene,px,0,bz);mk(BOX(2.6,.08,.5),lam(0x9B6B43),bench,0,.38,0);mk(BOX(2.6,.32,.06),lam(0x9B6B43),bench,0,.62,-.24);[-1.1,1.1].forEach(x=>mk(BOX(.08,.38,.45),lam(0x6B4A33),bench,x,.19,0));
+  SUBS.forEach(([n,st0,note],i)=>{const pr=person(st0,.85);pr.position.set(-.8+i*.8,.42,.02);bench.add(pr);pickable(s,pr,tipPerson({n,s:st0},'Substitute',`<br>${note}`),900+i*120);});
+  label(s,'Substitutes · 3',px,1.6,bz,'big');
+  forest(s,22,13.5,50,4);
+  legend(STATUS_LEGEND().map(x=>x[1]==='Open lead role'?['--crit','Open head slot']:x));
+  s.cam=[-2,21,27];s.target=[-2,.3,0];return s;
+}};
+
+/* ---------- switching, rendering, picking ---------- */
+function dispose(s){if(!s)return;s.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose();}});}
+function show(id,keepCam){
+  if(!VIEWS[id])id='pace';
+  const prev=keepCam&&st?{p:camera.position.clone(),t:controls.target.clone()}:null;
+  dispose(st);st=VIEWS[id]();finish(st);currentId=id;
+  labelsEl.innerHTML='';st.labels.forEach(l=>labelsEl.appendChild(l.el));
+  if(prev){camera.position.copy(prev.p);controls.target.copy(prev.t);st.grow.forEach(g=>g.obj.scale.copy(g.base));st.grow=[];}
+  else{camera.position.set(...st.cam);controls.target.set(...st.target);}
+  controls.update();tip.hidden=true;hovered=null;
+  document.querySelectorAll('nav a').forEach(a=>{if(a.dataset.v===id)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==id);
+}
+const easeBack=t=>{const c1=1.7,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);};
+const v3=new THREE.Vector3(),clock=new THREE.Clock();
+function loop(now){
+  requestAnimationFrame(loop);if(!st)return;
+  controls.update();
+  const t=clock.getElapsedTime();
+  st.grow=st.grow.filter(g=>{const u=Math.min(1,Math.max(0,(now-st.t0-g.d)/700)),e=Math.max(.001,easeBack(u));if(g.axis==='y')g.obj.scale.y=g.base.y*e;else g.obj.scale.set(g.base.x*e,g.base.y*e,g.base.z*e);return u<1;});
+  if(!reduce)for(const f of st.tick)f(t);
+  renderer.render(st.scene,camera);
+  const w=renderer.domElement.clientWidth,h=renderer.domElement.clientHeight;
+  for(const l of st.labels){v3.copy(l.v).project(camera);
+    if(v3.z>1||v3.x<-1.1||v3.x>1.1||v3.y<-1.1||v3.y>1.1){l.el.hidden=true;continue;}
+    l.el.hidden=false;l.el.style.left=((v3.x+1)/2*w).toFixed(1)+'px';l.el.style.top=((1-v3.y)/2*h).toFixed(1)+'px';}
+}
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();let hovered=null;
+function glow(obj,on){obj.traverse(o=>{if(o.isMesh&&o.material.emissive&&!o.material.map){if(on){o.userData.em=o.material.emissive.getHex();o.material.emissive.setHex(0x3a3a3a);}else if(o.userData.em!==undefined)o.material.emissive.setHex(o.userData.em);}});}
+function pick(e){
+  const r=renderer.domElement.getBoundingClientRect();
+  ptr.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ptr,camera);
+  const hit=ray.intersectObjects(st.pick,true)[0];
+  let o=hit?hit.object:null;while(o&&!o.userData.tip)o=o.parent;
+  if(hovered&&hovered!==o)glow(hovered,false);
+  if(!o){tip.hidden=true;hovered=null;renderer.domElement.style.cursor='';return;}
+  if(hovered!==o)glow(o,true);hovered=o;
+  renderer.domElement.style.cursor='pointer';
+  tip.innerHTML=o.userData.tip;tip.hidden=false;
+  const x=e.clientX-r.left,y=e.clientY-r.top,tw=tip.offsetWidth,th=tip.offsetHeight;
+  tip.style.left=Math.max(8,Math.min(x+14,r.width-tw-8))+'px';tip.style.top=Math.max(8,y-th-12)+'px';
+}
+renderer.domElement.addEventListener('pointermove',pick);
+renderer.domElement.addEventListener('pointerdown',pick);
+renderer.domElement.addEventListener('pointerleave',()=>{tip.hidden=true;if(hovered)glow(hovered,false);hovered=null;});
+
+const route=()=>show((location.hash||'#pace').slice(1));
+addEventListener('hashchange',route);
+const rethem=()=>show(currentId,true);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',rethem);
+new MutationObserver(rethem).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+resize();route();requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
